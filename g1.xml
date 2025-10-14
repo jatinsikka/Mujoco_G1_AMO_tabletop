@@ -292,7 +292,7 @@
     <light name="side_light" pos="2 2 2" dir="-1 -1 -1" diffuse="0.6 0.6 0.6" specular="0.1 0.1 0.1" directional="true"/>
     <light name="back_light" pos="-3 -2 3" dir="1 0 -1" diffuse="0.4 0.4 0.4" specular="0.05 0.05 0.05" directional="true"/>
     
-    <!-- Left Workstation - Simple Machine -->
+    <!-- Left Workstation Table -->
     <body name="left_workstation" pos="0.8 -0.6 0">
       <!-- Table top -->
       <geom name="left_table_top" type="box" size="0.4 0.3 0.02" pos="0 0 0.7" rgba="0.8 0.6 0.4 1"/>
@@ -302,42 +302,19 @@
       <geom name="left_table_leg3" type="cylinder" size="0.02 0.35" pos="-0.35 0.25 0.35" rgba="0.7 0.7 0.8 1"/>
       <geom name="left_table_leg4" type="cylinder" size="0.02 0.35" pos="-0.35 -0.25 0.35" rgba="0.7 0.7 0.8 1"/>
       
-      <!-- Simple Machine Base -->
-      <body name="machine_base" pos="0 0 0.72">
-        <geom name="machine_base_plate" type="box" size="0.25 0.15 0.02" rgba="0.3 0.3 0.3 1"/>
-        
-        <!-- Machine Motor Housing -->
-        <body name="motor_housing" pos="0.05 0 0.03">
-          <geom name="motor_body" type="cylinder" size="0.04 0.06" rgba="0.2 0.2 0.2 1"/>
-          <geom name="motor_shaft" type="cylinder" size="0.01 0.08" pos="0 0 0.08" rgba="0.8 0.8 0.8 1"/>
-        </body>
-        
-        <!-- Control Panel -->
-        <body name="control_panel" pos="-0.08 0 0.03">
-          <geom name="panel_face" type="box" size="0.08 0.06 0.01" rgba="0.1 0.1 0.1 1"/>
-          <geom name="panel_button1" type="cylinder" size="0.01 0.005" pos="0.02 0.02 0.006" rgba="0.8 0.2 0.2 1"/>
-          <geom name="panel_button2" type="cylinder" size="0.01 0.005" pos="0.02 -0.02 0.006" rgba="0.2 0.8 0.2 1"/>
-          <geom name="panel_display" type="box" size="0.03 0.02 0.001" pos="-0.02 0 0.006" rgba="0.0 0.0 0.8 1"/>
-        </body>
-        
-        <!-- Conveyor Belt -->
-        <body name="conveyor_belt" pos="0 0.1 0.03">
-          <geom name="belt_base" type="box" size="0.15 0.02 0.01" rgba="0.4 0.4 0.4 1"/>
-          <geom name="belt_roller1" type="cylinder" size="0.01 0.08" pos="-0.07 0 0.02" rgba="0.6 0.6 0.6 1"/>
-          <geom name="belt_roller2" type="cylinder" size="0.01 0.08" pos="0.07 0 0.02" rgba="0.6 0.6 0.6 1"/>
-        </body>
-        
-        <!-- Status Lights -->
-        <body name="status_light1" pos="0.1 0.05 0.05">
-          <geom name="light1" type="sphere" size="0.008" rgba="0.8 0.2 0.2 1"/>
-        </body>
-        <body name="status_light2" pos="0.1 -0.05 0.05">
-          <geom name="light2" type="sphere" size="0.008" rgba="0.2 0.8 0.2 1"/>
-        </body>
+      <!-- Items on left table -->
+      <body name="left_table_item1" pos="0.1 0.05 0.72">
+        <geom name="left_item1" type="box" size="0.05 0.03 0.02" rgba="0.8 0.2 0.2 1"/>
+        <inertial pos="0 0 0" mass="0.1" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="left_table_item2" pos="-0.1 -0.05 0.72">
+        <geom name="left_item2" type="sphere" size="0.02" rgba="0.2 0.4 0.8 1"/>
+        <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
       </body>
     </body>
     
-    <!-- Right Workstation - Industrial Parts & Tools -->
+    <!-- Right Workstation Table -->
     <body name="right_workstation" pos="0.8 0.6 0">
       <!-- Table top -->
       <geom name="right_table_top" type="box" size="0.4 0.3 0.02" pos="0 0 0.7" rgba="0.8 0.6 0.4 1"/>
@@ -347,82 +324,167 @@
       <geom name="right_table_leg3" type="cylinder" size="0.02 0.35" pos="-0.35 0.25 0.35" rgba="0.7 0.7 0.8 1"/>
       <geom name="right_table_leg4" type="cylinder" size="0.02 0.35" pos="-0.35 -0.25 0.35" rgba="0.7 0.7 0.8 1"/>
       
-      <!-- Industrial Parts Storage -->
-      <body name="parts_storage" pos="-0.2 0 0.72">
-        <geom name="storage_base" type="box" size="0.08 0.12 0.02" rgba="0.4 0.4 0.4 1"/>
-        
-        <!-- Industrial Bolts -->
-        <body name="bolt_set1" pos="0.02 0.03 0.03">
-          <geom name="bolt1" type="cylinder" size="0.003 0.02" rgba="0.7 0.7 0.7 1"/>
-          <inertial pos="0 0 0" mass="0.01" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
-        <body name="bolt_set2" pos="0.02 -0.03 0.03">
-          <geom name="bolt2" type="cylinder" size="0.003 0.02" rgba="0.7 0.7 0.7 1"/>
-          <inertial pos="0 0 0" mass="0.01" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
-        
-        <!-- Metal Brackets -->
-        <body name="bracket1" pos="-0.02 0.03 0.03">
-          <geom name="bracket_part1" type="box" size="0.02 0.01 0.005" rgba="0.5 0.5 0.5 1"/>
-          <inertial pos="0 0 0" mass="0.02" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
-        <body name="bracket2" pos="-0.02 -0.03 0.03">
-          <geom name="bracket_part2" type="box" size="0.02 0.01 0.005" rgba="0.5 0.5 0.5 1"/>
-          <inertial pos="0 0 0" mass="0.02" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
+      <!-- Items on right table -->
+      <body name="right_table_item1" pos="0.1 0.05 0.72">
+        <geom name="right_item1" type="cylinder" size="0.03 0.02" rgba="0.2 0.8 0.4 1"/>
+        <inertial pos="0 0 0" mass="0.08" diaginertia="0.0001 0.0001 0.0001"/>
       </body>
       
-      <!-- Tool Rack -->
-      <body name="tool_rack" pos="0.2 0 0.72">
-        <geom name="rack_base" type="box" size="0.08 0.12 0.02" rgba="0.3 0.3 0.3 1"/>
-        
-        <!-- Wrench -->
-        <body name="wrench" pos="0.02 0.04 0.03">
-          <geom name="wrench_head" type="box" size="0.01 0.01 0.005" rgba="0.2 0.2 0.2 1"/>
-          <geom name="wrench_handle" type="cylinder" size="0.003 0.04" pos="0 0 0.04" rgba="0.8 0.8 0.8 1"/>
-          <inertial pos="0 0 0" mass="0.05" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
-        
-        <!-- Screwdriver -->
-        <body name="screwdriver" pos="0.02 -0.04 0.03">
-          <geom name="driver_tip" type="cylinder" size="0.002 0.01" rgba="0.1 0.1 0.1 1"/>
-          <geom name="driver_handle" type="cylinder" size="0.008 0.03" pos="0 0 0.02" rgba="0.8 0.2 0.2 1"/>
-          <inertial pos="0 0 0" mass="0.03" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
-        
-        <!-- Pliers -->
-        <body name="pliers" pos="-0.02 0.04 0.03">
-          <geom name="pliers_head" type="box" size="0.015 0.005 0.01" rgba="0.2 0.2 0.2 1"/>
-          <geom name="pliers_handle1" type="cylinder" size="0.003 0.03" pos="0.008 0 0.02" rgba="0.8 0.8 0.8 1"/>
-          <geom name="pliers_handle2" type="cylinder" size="0.003 0.03" pos="-0.008 0 0.02" rgba="0.8 0.8 0.8 1"/>
-          <inertial pos="0 0 0" mass="0.04" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
-        
-        <!-- Hammer -->
-        <body name="hammer" pos="-0.02 -0.04 0.03">
-          <geom name="hammer_head" type="box" size="0.02 0.01 0.01" rgba="0.3 0.3 0.3 1"/>
-          <geom name="hammer_handle" type="cylinder" size="0.005 0.05" pos="0 0 0.03" rgba="0.6 0.3 0.1 1"/>
-          <inertial pos="0 0 0" mass="0.08" diaginertia="0.00001 0.00001 0.00001"/>
-        </body>
-      </body>
-      
-      <!-- Work Piece -->
-      <body name="work_piece" pos="0 0.1 0.72">
-        <geom name="workpiece_base" type="box" size="0.06 0.04 0.02" rgba="0.6 0.6 0.6 1"/>
-        <inertial pos="0 0 0" mass="0.2" diaginertia="0.0001 0.0001 0.0001"/>
-      </body>
-      
-      <!-- Vise -->
-      <body name="vise" pos="0 -0.1 0.72">
-        <geom name="vise_base" type="box" size="0.08 0.04 0.02" rgba="0.4 0.4 0.4 1"/>
-        <geom name="vise_jaw1" type="box" size="0.02 0.01 0.03" pos="0.03 0 0.015" rgba="0.3 0.3 0.3 1"/>
-        <geom name="vise_jaw2" type="box" size="0.02 0.01 0.03" pos="-0.03 0 0.015" rgba="0.3 0.3 0.3 1"/>
+      <body name="right_table_item2" pos="-0.1 -0.05 0.72">
+        <geom name="right_item2" type="box" size="0.04 0.02 0.03" rgba="0.6 0.3 0.8 1"/>
+        <inertial pos="0 0 0" mass="0.12" diaginertia="0.0001 0.0001 0.0001"/>
       </body>
     </body>
     
-    <!-- Work area markers -->
-    <geom name="left_table_marker" type="cylinder" size="0.01 0.001" pos="0.8 -0.6 0.001" rgba="1 1 0 0.5"/>
-    <geom name="right_table_marker" type="cylinder" size="0.01 0.001" pos="0.8 0.6 0.001" rgba="0 1 1 0.5"/>
+    <!-- Big Industrial Machine -->
+    <body name="industrial_machine" pos="0 -2 0">
+      <!-- Machine Base -->
+      <geom name="machine_base" type="box" size="1.5 0.8 0.1" pos="0 0 0.05" rgba="0.2 0.2 0.2 1"/>
+      
+      <!-- Main Machine Body -->
+      <body name="machine_body" pos="0 0 0.6">
+        <geom name="body_main" type="box" size="1.2 0.6 1.0" rgba="0.3 0.3 0.3 0.3"/>
+        
+        <!-- Machine Door -->
+        <body name="machine_door" pos="0.61 0 0">
+          <geom name="door_frame" type="box" size="0.05 0.5 0.8" pos="0 0 0" rgba="0.1 0.1 0.1 1"/>
+          <geom name="door_panel" type="box" size="0.02 0.45 0.75" pos="0 0 0" rgba="0.4 0.4 0.4 1"/>
+          <geom name="door_handle" type="cylinder" size="0.03 0.08" pos="0.01 0.2 0" rgba="0.8 0.8 0.8 1"/>
+          <geom name="door_window" type="box" size="0.001 0.3 0.4" pos="0.001 0 0.1" rgba="0.7 0.7 0.9 0.8"/>
+        </body>
+        
+
+        
+        <!-- Machine Vents -->
+        <geom name="vent1" type="box" size="0.1 0.01 0.2" pos="-0.61 0 0.2" rgba="0.1 0.1 0.1 1"/>
+        <geom name="vent2" type="box" size="0.1 0.01 0.2" pos="0.61 0 0.2" rgba="0.1 0.1 0.1 1"/>
+        <geom name="vent3" type="box" size="0.1 0.01 0.2" pos="-0.61 0 0.6" rgba="0.1 0.1 0.1 1"/>
+        <geom name="vent4" type="box" size="0.1 0.01 0.2" pos="0.61 0 0.6" rgba="0.1 0.1 0.1 1"/>
+        
+        <!-- Warning Labels -->
+        <geom name="warning_label1" type="box" size="0.08 0.01 0.05" pos="-0.61 0 0.4" rgba="0.8 0.2 0.2 1"/>
+        <geom name="warning_label2" type="box" size="0.08 0.01 0.05" pos="0.61 0 0.4" rgba="0.8 0.2 0.2 1"/>
+        
+        <!-- Side Panels -->
+        <geom name="side_panel1" type="box" size="0.02 0.4 0.6" pos="-0.61 0 0.3" rgba="0.2 0.2 0.2 1"/>
+        <geom name="side_panel2" type="box" size="0.02 0.4 0.6" pos="0.61 0 0.3" rgba="0.2 0.2 0.2 1"/>
+      </body>
+      
+      <!-- Machine Top -->
+      <body name="machine_top" pos="0 0 1.2">
+        <geom name="top_plate" type="box" size="1.0 0.4 0.1" rgba="0.2 0.2 0.2 1"/>
+        <geom name="top_vent" type="box" size="0.8 0.2 0.05" pos="0 0 0.05" rgba="0.1 0.1 0.1 1"/>
+      </body>
+      
+      <!-- Machine Pipes -->
+      <body name="pipe1" pos="-0.4 0 0.8">
+        <geom name="pipe1_main" type="cylinder" size="0.03 0.3" rgba="0.4 0.4 0.4 1"/>
+        <geom name="pipe1_joint" type="sphere" size="0.05" pos="0 0.3 0" rgba="0.3 0.3 0.3 1"/>
+      </body>
+      
+      <body name="pipe2" pos="0.4 0 0.8">
+        <geom name="pipe2_main" type="cylinder" size="0.03 0.3" rgba="0.4 0.4 0.4 1"/>
+        <geom name="pipe2_joint" type="sphere" size="0.05" pos="0 0.3 0" rgba="0.3 0.3 0.3 1"/>
+      </body>
+    </body>
+    
+    <!-- Separate Visible Features -->
+    <!-- Interactive Control Panel (separate from machine body) -->
+    <body name="interactive_control_panel" pos="0 -1.5 0.9">
+      <!-- Main panel base -->
+      <geom name="panel_base" type="box" size="0.8 0.1 0.2" rgba="0.1 0.1 0.1 1"/>
+      
+      <!-- Individual interactive gauges -->
+      <body name="gauge1" pos="-0.3 0.06 0.1">
+        <geom name="gauge1_face" type="cylinder" size="0.06 0.015" rgba="0.9 0.9 0.9 1"/>
+        <geom name="gauge1_needle" type="box" size="0.04 0.003 0.002" pos="0 0 0.016" rgba="0.8 0.2 0.2 1"/>
+        <geom name="gauge1_center" type="sphere" size="0.008" rgba="0.2 0.2 0.2 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="gauge2" pos="0 0.06 0.1">
+        <geom name="gauge2_face" type="cylinder" size="0.06 0.015" rgba="0.9 0.9 0.9 1"/>
+        <geom name="gauge2_needle" type="box" size="0.04 0.003 0.002" pos="0 0 0.016" rgba="0.2 0.8 0.2 1"/>
+        <geom name="gauge2_center" type="sphere" size="0.008" rgba="0.2 0.2 0.2 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="gauge3" pos="0.3 0.06 0.1">
+        <geom name="gauge3_face" type="cylinder" size="0.06 0.015" rgba="0.9 0.9 0.9 1"/>
+        <geom name="gauge3_needle" type="box" size="0.04 0.003 0.002" pos="0 0 0.016" rgba="0.2 0.2 0.8 1"/>
+        <geom name="gauge3_center" type="sphere" size="0.008" rgba="0.2 0.2 0.2 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <!-- Interactive buttons -->
+      <body name="emergency_button" pos="-0.5 0.06 0.05">
+        <geom name="emergency_btn" type="cylinder" size="0.025 0.015" rgba="0.9 0.1 0.1 1"/>
+        <inertial pos="0 0 0" mass="0.01" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="start_button" pos="-0.2 0.06 0.05">
+        <geom name="start_btn" type="cylinder" size="0.02 0.012" rgba="0.1 0.8 0.1 1"/>
+        <inertial pos="0 0 0" mass="0.01" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="stop_button" pos="0.2 0.06 0.05">
+        <geom name="stop_btn" type="cylinder" size="0.02 0.012" rgba="0.8 0.8 0.1 1"/>
+        <inertial pos="0 0 0" mass="0.01" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="reset_button" pos="0.5 0.06 0.05">
+        <geom name="reset_btn" type="cylinder" size="0.02 0.012" rgba="0.1 0.1 0.8 1"/>
+        <inertial pos="0 0 0" mass="0.01" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <!-- Display screen -->
+      <geom name="display_screen" type="box" size="0.15 0.08 0.008" pos="0 0.06 0.15" rgba="0.05 0.05 0.05 1"/>
+      <geom name="display_content" type="box" size="0.14 0.07 0.001" pos="0 0.061 0.159" rgba="0.0 0.3 0.0 1"/>
+    </body>
+    
+    <!-- Interactive Status Lights Panel (separate from machine body) -->
+    <body name="status_lights_panel" pos="0 -1.5 1.15">
+      <!-- Light panel base -->
+      <geom name="lights_base" type="box" size="0.6 0.08 0.05" rgba="0.15 0.15 0.15 1"/>
+      
+      <!-- Individual status lights -->
+      <body name="alarm_light" pos="-0.4 0.05 0.03">
+        <geom name="alarm_bulb" type="sphere" size="0.03" rgba="0.9 0.1 0.1 1"/>
+        <geom name="alarm_housing" type="cylinder" size="0.035 0.02" rgba="0.3 0.3 0.3 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="operation_light" pos="-0.2 0.05 0.03">
+        <geom name="operation_bulb" type="sphere" size="0.03" rgba="0.1 0.9 0.1 1"/>
+        <geom name="operation_housing" type="cylinder" size="0.035 0.02" rgba="0.3 0.3 0.3 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="status_light" pos="0 0.05 0.03">
+        <geom name="status_bulb" type="sphere" size="0.03" rgba="0.1 0.1 0.9 1"/>
+        <geom name="status_housing" type="cylinder" size="0.035 0.02" rgba="0.3 0.3 0.3 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="warning_light" pos="0.2 0.05 0.03">
+        <geom name="warning_bulb" type="sphere" size="0.03" rgba="0.9 0.8 0.1 1"/>
+        <geom name="warning_housing" type="cylinder" size="0.035 0.02" rgba="0.3 0.3 0.3 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+      
+      <body name="maintenance_light" pos="0.4 0.05 0.03">
+        <geom name="maintenance_bulb" type="sphere" size="0.03" rgba="0.9 0.4 0.9 1"/>
+        <geom name="maintenance_housing" type="cylinder" size="0.035 0.02" rgba="0.3 0.3 0.3 1"/>
+        <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
+      </body>
+    </body>
+    
+    <!-- Large Door (separate from machine body) -->
+    <body name="visible_door" pos="0.61 -2 0.6">
+      <geom name="visible_door_panel" type="box" size="0.02 0.5 0.8" rgba="0.4 0.4 0.4 1"/>
+      <geom name="visible_door_handle" type="cylinder" size="0.04 0.1" pos="0.01 0.2 0" rgba="0.8 0.8 0.8 1"/>
+      <geom name="visible_door_window" type="box" size="0.001 0.3 0.4" pos=".001 0 0.1" rgba="0.7 0.7 0.9 0.8"/>
+    </body>
   </worldbody>
 
   <keyframe>

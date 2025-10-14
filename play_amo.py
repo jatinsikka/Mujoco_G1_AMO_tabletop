@@ -162,8 +162,8 @@ class HumanoidEnv:
         mujoco.mj_step(self.model, self.data)
         self.viewer = mujoco_viewer.MujocoViewer(self.model, self.data)
         self.viewer.commands = np.zeros(8, dtype=np.float32)
-        self.viewer.cam.distance = 2.5 # 5.0
-        self.viewer.cam.elevation = 0.0
+        self.viewer.cam.distance = 4.0 # 5.0
+        self.viewer.cam.elevation = -10.0
         self.viewer._key_callback = types.MethodType(_key_callback, self.viewer)
         glfw.set_key_callback(self.viewer.window, self.viewer._key_callback)
         
