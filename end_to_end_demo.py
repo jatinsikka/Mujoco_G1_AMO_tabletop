@@ -67,22 +67,32 @@ from scipy.spatial.transform import Rotation as _R
 _p = e.data.xpos[e.pelvis_id]; _yaw = _R.from_matrix(e.data.xmat[e.pelvis_id].reshape(3,3)).as_euler('xyz')[2]
 print(f"after walk: pelvis xy=({_p[0]:.3f},{_p[1]:.3f}) yaw={_yaw:.2f} | press-stance xy=({env.robot_start_pos[0]:.3f},{press_y:.3f}) yaw={target_yaw:.2f}")
 
-# ARRIVED at the panel -> NO TELEPORT: the base stays wherever the walk landed (the policy is
-# stance-robust — trained with +-4cm/+-5deg arrival noise). Replicate only the ARM setup the
-# curriculum reset does at frac 1.0: rest-pose bias (zero), the trained wrist tilt, and a short
-# stand-settle (walk -> stand transition). Then the RL policy does the whole reach -> press.
-e._in_place_stand = True
-env.arm_reach_bias[4:] = 0.0                       # frac 1.0 start = the true rest pose
-e.wrist_target = press_wrist.copy()
-env._filt_arm = np.zeros(env.num_arm_joints, dtype=np.float32)
-env._prev_action = np.zeros(env.num_arm_joints, dtype=np.float32)
-env.episode_steps = 0
-env.reward_fn.reset()
-env.initial_button_displacement = e.data.qpos[env.button_joint_id]
-for i in range(80):                                # AMO settles from walk to stand (the "arrival") —
-    env._amo_arm_step(a4_rest, wrist_target=press_wrist)   # the ENV's own settle (boosted arm-hold +
-    if i % 2 == 0: frames.append(shot())           # wrist tilt), long enough to converge like training's
+# ARRIVAL HANDOFF: re-init the controller via the env's OWN reset, pinned AT the walked-in base
+# pose (no repositioning, no stance noise, frac exactly 1.0 = arm from true rest). Manually
+# replicating the training reset state failed 4 ways (settle stiffness, wrist timing, AMO
+# history, filter state) — the env's reset IS the correct constructor for the policy's state.
+cur = e.data.qpos[pel:pel+7].copy()
+env.robot_start_pos = np.array([cur[0], cur[1], env.robot_start_pos[2]])
+env.robot_start_quat = cur[3:7].copy()
+env.stance_noise_k = 0.0
+env.set_curriculum_frac(1.0); env.set_curriculum_frac_min(1.0)
+# preserve SCENE-OBJECT state across the handoff reset (Jatin spotted the lever twitch ~10deg:
+# the reset's keyframe restore was touching world objects — the robot may re-init its controller,
+# but the WORLD must not blink)
+_scene_joints = ["lever_handle_joint", "screwdriver_joint", "block_cube_joint", "small_box_joint",
+                 "wrench_joint", "right_table_item2_joint", "battery_pack_joint"]
+_snap = []
+for jn in _scene_joints:
+    jid = mujoco.mj_name2id(e.model, mujoco.mjtObj.mjOBJ_JOINT, jn)
+    if jid >= 0:
+        adr = e.model.jnt_qposadr[jid]; n = 7 if e.model.jnt_type[jid] == mujoco.mjtJoint.mjJNT_FREE else 1
+        _snap.append((adr, e.data.qpos[adr:adr+n].copy()))
+obs, _ = env.reset()
+for adr, vals in _snap:
+    e.data.qpos[adr:adr+len(vals)] = vals
+mujoco.mj_forward(e.model, e.data)
 obs = env._get_obs()
+frames.append(shot())
 maxpress = 0.0
 env.max_episode_steps = 400   # give the reach+press room (the walk-in start is farther than eval's)
 for t in range(400):

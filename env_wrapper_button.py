@@ -365,7 +365,7 @@ class ButtonPressEnv(gym.Env):
             # walk->press handoff in the end-to-end demo. Noise SCALES with the curriculum level
             # (zero at frac 0) so the easy contact bootstrap stays easy — full-noise-at-level-0
             # killed the bootstrap (v3 stalled 0.03 at 500k). Heading setpoint stays nominal.
-            k = self.curriculum_frac_max
+            k = self.stance_noise_k if getattr(self, "stance_noise_k", None) is not None else self.curriculum_frac_max
             self.env.data.qpos[robot_qpos_start:robot_qpos_start+2] += k * np.random.uniform(-0.04, 0.04, 2)
             dyaw = k * np.random.uniform(-0.09, 0.09)
             qz = np.array([np.cos(dyaw/2), 0.0, 0.0, np.sin(dyaw/2)])
@@ -393,6 +393,7 @@ class ButtonPressEnv(gym.Env):
         self.env.last_action = np.zeros(self.env.num_dofs, dtype=np.float32)
         self._prev_action = np.zeros(self.num_arm_joints, dtype=np.float32)
         self._filt_arm = np.zeros(self.num_arm_joints, dtype=np.float32)
+        self._held_steps = 0
         self.env.arm_action = self.env.default_dof_pos[15:].copy()
         self.env.prev_arm_action = self.env.default_dof_pos[15:].copy()
         self.env.arm_blend = 0.0
@@ -676,6 +677,16 @@ class ButtonPressEnv(gym.Env):
         # Truncation: max steps
         if self.episode_steps >= self.max_episode_steps:
             truncated = True
+
+        # PRESS-ONCE (Jatin: policy pumped the button repeatedly farming depth income): once the
+        # button has been HELD pressed ~0.6s, the job is DONE — end the episode with a completion
+        # bonus. Trains "press, hold, stop" instead of press-retract-press.
+        if self.unified and self.curriculum:
+            self._held_steps = getattr(self, "_held_steps", 0) + 1 if button_displacement > 0.02 else 0
+            if self._held_steps >= 30:
+                terminated = True
+                reward += 50.0
+                info['pressed_done'] = True
 
         if terminated or truncated:   # per-episode success + current curriculum level (for the callback)
             info['is_success'] = bool(self.reward_fn.button_pressed)

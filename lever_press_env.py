@@ -417,6 +417,7 @@ class LeverPressEnv(gym.Env):
             # RE-BASELINE the throw reward at the SEATED angle (no free income from the seat's
             # own depression — lever5's policy retreated and farmed it).
             self.reward_fn.rest_angle = float(max(self._get_lever_angle(), self.target_angle + 0.2))
+            self._seat_angle = float(self._get_lever_angle())
 
         self.episode_steps = 0
         self.episode_return = 0.0
@@ -581,6 +582,13 @@ class LeverPressEnv(gym.Env):
         if robot_pos[2] < 0.4:
             terminated = True
             info['fell'] = True
+
+        # WRONG-DIRECTION cost: flinging the lever UP past the seat traps it at the latch's top
+        # stop. Smooth per-step cost (hard termination -20 backfired: shorter episodes + scared
+        # the policy off contact entirely — lever8 regressed 0.28->0.16).
+        if self.curriculum and lever_angle > getattr(self, "_seat_angle", self.REST_ANGLE) + 0.15:
+            reward -= 0.5
+            info['flung_up'] = True
 
         if self.episode_steps >= self.max_episode_steps:
             truncated = True

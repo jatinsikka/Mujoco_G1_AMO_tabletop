@@ -166,6 +166,7 @@ def train_lever(
     checkpoint_dir: str = "checkpoints_lever",
     n_envs: int = 1,
     curriculum: bool = False,
+    resume: str = None,
 ):
     print(f"\n=== Lever Training ===")
     print(f"Lever handle at ({LEVER_POSITION[0]:.2f}, {LEVER_POSITION[1]:.2f}, {LEVER_POSITION[2]:.2f})")
@@ -221,7 +222,14 @@ def train_lever(
 
     batch_size = 1024 if n_envs > 1 else 64
 
-    model = PPO(
+    if resume:
+        model = PPO.load(resume, env=env, device=device)
+        model.policy.log_std.data.fill_(-1.5)   # quiet exploration (std~0.22): default-scale Gaussian
+        # noise constantly flung the lever during rollouts, poisoning the data (button tolerated it;
+        # a 3.5cm knob doesn't)
+        print(f"[RESUME] loaded {resume} (log_std -> -1.5)")
+    else:
+        model = PPO(
         "MlpPolicy",
         env,
         learning_rate=learning_rate,
@@ -234,7 +242,7 @@ def train_lever(
         ent_coef=0.05,
         vf_coef=0.5,
         max_grad_norm=0.5,
-        policy_kwargs={"net_arch": [128, 128]},
+        policy_kwargs={"net_arch": [128, 128], "log_std_init": -1.5},
         verbose=1,
         device=device,
     )
@@ -285,6 +293,8 @@ def main():
                         help="Quick sanity run: 2000 steps, no W&B")
     parser.add_argument("--curriculum", action="store_true",
                         help="Reach curriculum: RL learns to reach from progressively farther (not IK-seeded)")
+    parser.add_argument("--resume", type=str, default=None,
+                        help="Checkpoint .zip to resume from")
     args = parser.parse_args()
 
     if args.smoke:
@@ -298,6 +308,7 @@ def main():
             use_wandb=not args.no_wandb,
             n_envs=args.n_envs,
             curriculum=args.curriculum,
+            resume=args.resume,
         )
 
 
