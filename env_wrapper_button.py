@@ -683,17 +683,24 @@ class ButtonPressEnv(gym.Env):
         # button has been HELD pressed ~0.6s, the job is DONE — end the episode with a completion
         # bonus. Trains "press, hold, stop" instead of press-retract-press.
         if self.unified and self.curriculum:
-            self._held_steps = getattr(self, "_held_steps", 0) + 1 if button_displacement > 0.02 else 0
+            # ROBUST hold counter: keeps counting while still fairly deep (>=15mm) — the old
+            # >20mm-consecutive counter reset on 1-step dips, episodes missed termination, and
+            # the policy air-swung through the leftover steps (Jatin caught it twice).
+            if button_displacement > 0.02 or (getattr(self, "_held_steps", 0) > 0 and button_displacement > 0.015):
+                self._held_steps = getattr(self, "_held_steps", 0) + 1
+            else:
+                self._held_steps = 0
             if self._held_steps >= 30:
                 terminated = True
                 reward += 50.0
                 info['pressed_done'] = True
-            # ANTI-PUMP: once pressed deep, letting the button pop back out costs money every
-            # step (Jatin: policy still pump-cycles before landing the 30-step hold).
             if button_displacement > 0.02:
                 self._was_deep = True
-            if getattr(self, "_was_deep", False) and button_displacement < 0.015:
-                reward -= 3.0
+            if getattr(self, "_was_deep", False):
+                if button_displacement < 0.015:
+                    reward -= 3.0          # ANTI-PUMP: re-press cycles cost
+                reward -= 0.8 * float(np.linalg.norm(self.env.dof_vel[19:23]))  # STILLNESS: after the
+                # first press, arm motion itself costs — air-swinging is no longer free
 
         if terminated or truncated:   # per-episode success + current curriculum level (for the callback)
             info['is_success'] = bool(self.reward_fn.button_pressed)
