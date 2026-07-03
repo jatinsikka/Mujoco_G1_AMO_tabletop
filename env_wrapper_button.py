@@ -366,8 +366,9 @@ class ButtonPressEnv(gym.Env):
             # (zero at frac 0) so the easy contact bootstrap stays easy — full-noise-at-level-0
             # killed the bootstrap (v3 stalled 0.03 at 500k). Heading setpoint stays nominal.
             k = self.stance_noise_k if getattr(self, "stance_noise_k", None) is not None else self.curriculum_frac_max
-            self.env.data.qpos[robot_qpos_start:robot_qpos_start+2] += k * np.random.uniform(-0.04, 0.04, 2)
-            dyaw = k * np.random.uniform(-0.09, 0.09)
+            self.env.data.qpos[robot_qpos_start:robot_qpos_start+2] += k * np.random.uniform(-0.08, 0.08, 2)
+            dyaw = k * np.random.uniform(-0.21, 0.21)   # widened +-8cm/+-12deg: the REAL carry-walk arrives
+            # up to 6cm/10deg off (AMO payload drift, measured in G6) — train the envelope the walk delivers
             qz = np.array([np.cos(dyaw/2), 0.0, 0.0, np.sin(dyaw/2)])
             q0 = self.env.data.qpos[robot_qpos_start+3:robot_qpos_start+7].copy()
             # quaternion multiply qz * q0 (perturb yaw about world z)
