@@ -51,3 +51,8 @@ Running cost tally start: ~$15–18 (pre-overnight VM time). VM restarted for ov
 
 
 - **UNIFIED DEMO stitched** (`_unified_demo.mp4`): one robot doing pick(IK)+press(RL)+lever(RL). Both RL skills verified. Concatenated clips (same robot) — NOT yet one continuous run; walk not yet included. Continuous integration (walk->pick->press->lever, one scene) = next polish. Cost ~$30, VM deallocated.
+## 2026-07-03 evening — press SOLVED, lever first full deterministic throw
+- Press v12: PUMPS=0 measured in-demo, terminates after one press+hold (robust hold counter + post-press stillness penalty). Walk->press one-take clean (176 frames).
+- Lever12 (BC warm-start -> PPO -> entropy-crush): FIRST full deterministic throw (51deg, end 0.081 rad) but ~50% reliable (1/2 eps; other stalls). 12 iterations today.
+- NEXT session lever fix (structural, from BC agent finding): arm_reach_bias is not in obs -> action semantics episode-ambiguous. Add bias to obs (33->37), re-collect demos, re-BC, retrain. Then G5 walk->lever.
+- READY for: G4 walk->pick continuous, G6-lite one-take (walk->pick->CARRY->press), G7 ticket->brain->robot wiring.
