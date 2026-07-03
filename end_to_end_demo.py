@@ -94,17 +94,25 @@ env._filt_arm[:] = 0; env._prev_action[:] = 0; env.episode_steps = 0
 env.reward_fn.reset(); env._held_steps = 0; env._was_deep = False
 env.initial_button_displacement = e.data.qpos[env.button_joint_id]
 obs = env._get_obs()
-maxpress = 0.0
+maxpress = 0.0; dips = 0; was_deep = False
 env.max_episode_steps = 400   # give the reach+press room (the walk-in start is farther than eval's)
 for t in range(400):
     a, _ = model.predict(obs, deterministic=True)
     obs, r, term, trunc, info = env.step(a)
-    maxpress = max(maxpress, env._get_button_displacement())
+    _d = env._get_button_displacement(); maxpress = max(maxpress, _d)
+    if _d > 0.02: was_deep = True
+    if was_deep and _d < 0.010: dips += 1; was_deep = False   # a full press->release cycle = one PUMP
     frames.append(shot())
     if t % 40 == 0:
         gp = env._right_hand_pos(); cap = e.data.geom_xpos[env._cap_gid]
         print(f"  press t{t}: gripper-cap {np.linalg.norm(gp - cap)*100:4.1f}cm  disp {env._get_button_displacement()*1000:4.1f}mm")
     if term or trunc: break
 
+# JOB DONE -> scripted DISENGAGE (Jatin: after the press, the hand should just lower and rest —
+# don't leave the RL policy in charge with nothing to do). PD eases the arm back to its rest pose.
+for i in range(55):
+    env._amo_arm_step(a4_rest, wrist_target=np.zeros(3))
+    if i % 2 == 0: frames.append(shot())
+
 imageio.mimsave(os.path.join(PROJ, "_e2e_demo.mp4"), frames, fps=30, quality=8)
-print(f"saved _e2e_demo.mp4  frames={len(frames)} (walk {walk_frames}) MAX_press={maxpress*1000:.1f}mm")
+print(f"saved _e2e_demo.mp4  frames={len(frames)} (walk {walk_frames}) MAX_press={maxpress*1000:.1f}mm PUMPS={dips}")

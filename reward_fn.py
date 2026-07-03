@@ -560,7 +560,9 @@ class LeverPressRewardFunction:
         # (breaker-style pull-DOWN: rest 1.05 -> target 0.15, so progress grows as angle FALLS).
         self.max_lever_angle = max(self.max_lever_angle, lever_angle)
         angle_frac = float(np.clip((self.rest_angle - lever_angle) / (self.rest_angle - self.target_angle), 0.0, 1.0))
-        r_rotate = self.rotate_reward * angle_frac
+        r_rotate = self.rotate_reward * angle_frac ** 3   # CONVEX: linear income let the policy park at
+        # ~30% progress and collect an annuity forever (creep 0.0004 rad/step, never completing);
+        # cubing makes real income exist only near COMPLETION.
         # success band: within tol of target
         if abs(lever_angle - self.target_angle) < self.angle_tol and not self.lever_turned:
             r_rotate += self.first_turn_bonus
