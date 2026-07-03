@@ -81,18 +81,19 @@ env.set_curriculum_frac(1.0); env.set_curriculum_frac_min(1.0)
 # but the WORLD must not blink)
 _scene_joints = ["lever_handle_joint", "screwdriver_joint", "block_cube_joint", "small_box_joint",
                  "wrench_joint", "right_table_item2_joint", "battery_pack_joint"]
-_snap = []
-for jn in _scene_joints:
-    jid = mujoco.mj_name2id(e.model, mujoco.mjtObj.mjOBJ_JOINT, jn)
-    if jid >= 0:
-        adr = e.model.jnt_qposadr[jid]; n = 7 if e.model.jnt_type[jid] == mujoco.mjtJoint.mjJNT_FREE else 1
-        _snap.append((adr, e.data.qpos[adr:adr+n].copy()))
-obs, _ = env.reset()
-for adr, vals in _snap:
-    e.data.qpos[adr:adr+len(vals)] = vals
-mujoco.mj_forward(e.model, e.data)
+full_qpos = e.data.qpos.copy(); full_qvel = e.data.qvel.copy()   # the EXACT walked-in world+robot state
+obs, _ = env.reset()                                              # re-init controller internals (histories,
+press_wrist2 = env._solved_wrist.copy()                           #  biases, wrist) — physical state next:
+e.data.qpos[:] = full_qpos; e.data.qvel[:] = full_qvel            # restore EVERYTHING (no pose snap, no
+mujoco.mj_forward(e.model, e.data); e._extract_state()            #  scene twitch — Jatin saw both)
+# now SETTLE ON CAMERA: the robot visibly gathers from its walk pose into the press-ready pose
+for i in range(70):
+    env._amo_arm_step(e.default_dof_pos[19:23], wrist_target=press_wrist2)
+    if i % 2 == 0: frames.append(shot())
+env._filt_arm[:] = 0; env._prev_action[:] = 0; env.episode_steps = 0
+env.reward_fn.reset(); env._held_steps = 0; env._was_deep = False
+env.initial_button_displacement = e.data.qpos[env.button_joint_id]
 obs = env._get_obs()
-frames.append(shot())
 maxpress = 0.0
 env.max_episode_steps = 400   # give the reach+press room (the walk-in start is farther than eval's)
 for t in range(400):

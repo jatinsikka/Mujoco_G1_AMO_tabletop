@@ -394,6 +394,7 @@ class ButtonPressEnv(gym.Env):
         self._prev_action = np.zeros(self.num_arm_joints, dtype=np.float32)
         self._filt_arm = np.zeros(self.num_arm_joints, dtype=np.float32)
         self._held_steps = 0
+        self._was_deep = False
         self.env.arm_action = self.env.default_dof_pos[15:].copy()
         self.env.prev_arm_action = self.env.default_dof_pos[15:].copy()
         self.env.arm_blend = 0.0
@@ -687,6 +688,12 @@ class ButtonPressEnv(gym.Env):
                 terminated = True
                 reward += 50.0
                 info['pressed_done'] = True
+            # ANTI-PUMP: once pressed deep, letting the button pop back out costs money every
+            # step (Jatin: policy still pump-cycles before landing the 30-step hold).
+            if button_displacement > 0.02:
+                self._was_deep = True
+            if getattr(self, "_was_deep", False) and button_displacement < 0.015:
+                reward -= 3.0
 
         if terminated or truncated:   # per-episode success + current curriculum level (for the callback)
             info['is_success'] = bool(self.reward_fn.button_pressed)
