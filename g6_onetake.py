@@ -1,15 +1,16 @@
 """
 G6-lite — ONE CONTINUOUS SIM, ONE TAKE: the G1 WALKS to the workstation table, PICKS the
 red box (IK + force-gated latch), CARRIES it while WALKING ~2.5m (180-deg turn) to the
-control panel, PRESSES the yellow button ONCE with the RL curriculum policy, then lowers
-the arm to REST — box latched in the gripper the whole way. No cuts, no teleports after
+control panel, PLACES the box down clear of the press path (side release, short honest drop),
+PRESSES the yellow button ONCE with the RL curriculum policy, then lowers
+the arm to REST — box latched in the gripper through the carry. No cuts, no teleports after
 the walk starts (the press handoff uses end_to_end_demo's reset + full-snapshot restore).
 
 Model: g1_amo_gripper_pick.mjb (= press model + box) — the ButtonPressEnv is pointed at it
 via a UnifiedHumanoidEnv._load_robot_config monkeypatch BEFORE construction, so the press
 env, the pick machinery and the RL policy all live in the SAME sim.
 
-Output: _g6_onetake.mp4 + _g6_f0..f3.png (pick / carry / press / rest) + printed metrics.
+Output: _g6_onetake.mp4 + _g6_f0..f3.png (pick / carry / place / press) + printed metrics.
 """
 import sys, os
 PROJ = r"C:\Users\sikka\Documents\Academic\Grad_Research\HCR_Research\Sequent-robotics"
@@ -371,6 +372,59 @@ if carry_fall:
     imageio.mimsave("_g6_onetake.mp4", frames, fps=30, quality=8)
     print("ABORT: fell during carry — saved _g6_fail_carry.png + partial video"); sys.exit(1)
 
+# 2d) PLACE the box down before pressing (a human doesn't press with a full hand — and 'place'
+# is one of the 7 skills). Release at the robot's SIDE (+X, y >= pelvis_y — AWAY from the
+# machine face; run 7 aimed pelvis+[0.28,-0.18] and shoved the box INTO the panel), from
+# whatever height the arm comfortably reaches — a short drop to the floor is honest, the arm
+# cannot reach the floor from standing. CRITICAL: zero d.xfrc_applied on release — run 7's
+# box hung "wedged" at z=0.58 because the last capped-40N latch force kept being applied on
+# every mj_step after LATCH["on"]=False (latch_force only clears xfrc in its drop-gate), and
+# the pinned box sat in the press path (press whiffed 0.0mm).
+def stance_report(tag):
+    p = d.xpos[e.pelvis_id]; yy = float(quat_to_euler(d.qpos[pq+3:pq+7])[2])
+    print(f"  [{tag}] pelvis=({p[0]:.3f},{p[1]:.3f}) yaw={np.degrees(yy):.1f} "
+          f"(stance err x={(p[0]-press_x)*100:+.1f}cm y={(p[1]-press_y)*100:+.1f}cm "
+          f"yaw={np.degrees(abs(wrap(yy-press_target_yaw))):.1f}deg)")
+
+stance_report("place start")
+pelv = d.xpos[e.pelvis_id].copy()
+side_xy = np.array([pelv[0] + 0.44, pelv[1] + 0.04])
+Z_HI, Z_LO = 0.60, 0.42
+for i in range(70):
+    frac_i = min(1.0, i / 60.0)
+    tgt = np.array([side_xy[0], side_xy[1], Z_HI - (Z_HI - Z_LO) * frac_i])
+    step(tgt, 255.0, wrist_hold=wrist_hold, vx=0.0, yaw=press_target_yaw, rec=(i % 2 == 0))
+    carry_b2g.append(float(np.linalg.norm(d.xpos[box_bid] - gp())))
+place_idx = len(carry_b2g)          # b2g samples up to here = box latched (carry + lower)
+LATCH["on"] = False
+d.xfrc_applied[box_bid, :] = 0.0    # kill the residual latch force (persists across mj_step)
+for i in range(40):                 # open + hold while the box drops clear
+    step(np.array([side_xy[0], side_xy[1], Z_LO]), 0.0, wrist_hold=wrist_hold, vx=0.0,
+         yaw=press_target_yaw, rec=(i % 2 == 0))
+stance_report("after release")
+snap["place"] = len(frames) - 1     # box just released, resting on the floor beside the robot
+for i in range(40):                 # retract up/inward to a carry-like pose for the handoff
+    step(np.array([pelv[0] + 0.10, pelv[1] - 0.15, 0.75]), 0.0, wrist_hold=wrist_hold, vx=0.0,
+         yaw=press_target_yaw, rec=(i % 2 == 0))
+stance_report("after retract")
+# STANCE RECOVERY: the place lean creeps the pelvis toward the panel (run 8: y err -5.2cm ->
+# -8.9cm, outside the policy's +-8cm trained stance noise -> the press flailed 15-30cm from the
+# cap, 0.0mm). Walk BACKWARD a few steps to restore the y the working no-place run pressed from.
+retract_tgt = np.array([pelv[0] + 0.10, pelv[1] - 0.15, 0.75])
+if float(d.qpos[pq + 1]) < press_y - 0.030:
+    e._in_place_stand = False
+    for i in range(160):
+        if float(d.qpos[pq + 1]) >= press_y - 0.020: break
+        step(retract_tgt, 0.0, wrist_hold=wrist_hold, vx=-0.12, yaw=press_target_yaw, rec=(i % 2 == 0))
+    e._in_place_stand = True
+    for i in range(40):             # re-settle standing
+        step(retract_tgt, 0.0, wrist_hold=wrist_hold, vx=0.0, yaw=press_target_yaw, rec=(i % 2 == 0))
+    stance_report("after recovery")
+box_jadr = m.jnt_dofadr[m.body_jntadr[box_bid]]
+bp = d.xpos[box_bid]
+print(f"placed: box at {bp.round(3)} | on floor={bp[2] < 0.15} "
+      f"speed={np.linalg.norm(d.qvel[box_jadr:box_jadr+3]):.3f}m/s")
+
 # ============================== PHASE 3: RL PRESS HANDOFF (end_to_end_demo verbatim) ==============================
 e.wrist_kp = np.array([120., 120., 120.]); e.wrist_kv = np.array([4., 4., 4.])   # trained wrist gains
 cur = d.qpos[pel:pel+7].copy()
@@ -396,6 +450,10 @@ for i in range(70):
     carry_b2g.append(float(np.linalg.norm(d.xpos[box_bid] - gp())))
 if LATCH["on"]:
     latch_engage()                                      # re-anchor for the press-arm pose
+cap_gid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, env.cap_geom_name)
+stance_report("post-settle")
+print(f"  [post-settle] gripper-cap {np.linalg.norm(env._right_hand_pos() - d.geom_xpos[cap_gid])*100:.1f}cm "
+      f"wrist_q={d.qpos[e.wrist_qadr].round(3)} press_wrist2={press_wrist2.round(3)}")
 
 env._filt_arm[:] = 0; env._prev_action[:] = 0; env.episode_steps = 0
 env.reward_fn.reset(); env._held_steps = 0; env._was_deep = False
@@ -434,25 +492,31 @@ snap["rest"] = len(frames) - 1
 # ============================== METRICS ==============================
 z = np.array(log["z"]); roll = np.array(log["roll"]); pitch = np.array(log["pitch"])
 b2g = np.array(carry_b2g)
-box_to_gp_end = float(np.linalg.norm(d.xpos[box_bid] - gp()))
 upright = z.min() > 0.6 and np.max(np.abs(roll)) < 0.5 and np.max(np.abs(pitch)) < 0.5
-held_all = (not LATCH["dropped"]) and box_to_gp_end < 0.06 and b2g.max() < 0.10
+held_carry = (not LATCH["dropped"]) and b2g[:place_idx].max() < 0.10
+box_end = d.xpos[box_bid].copy()
+box_speed = float(np.linalg.norm(d.qvel[box_jadr:box_jadr+3]))
+btn_xy = d.geom_xpos[cap_gid][:2]
+box_btn_dist = float(np.linalg.norm(box_end[:2] - btn_xy))
+placed_ok = box_end[2] < 0.15 and box_btn_dist > 0.25 and box_speed < 0.05
 press_ok = maxpress >= 0.020 and dips == 0 and terminated
 
 print("\n==== G6 ONE-TAKE RESULTS ====")
-print(f"pick lift: {box_lift_at_pick*100:.1f} cm  (latch on: {LATCH['on']}, dropped: {LATCH['dropped']})")
-print(f"box-to-gripper: end={box_to_gp_end*100:.1f}cm  max over carry+press={b2g.max()*100:.1f}cm")
+print(f"pick lift: {box_lift_at_pick*100:.1f} cm  (dropped early: {LATCH['dropped']})")
+print(f"box-to-gripper max over carry+lower: {b2g[:place_idx].max()*100:.1f}cm")
+print(f"box placed at {box_end.round(3)}  dist-to-button={box_btn_dist*100:.1f}cm  speed={box_speed:.3f}m/s")
 print(f"press: MAX={maxpress*1000:.1f}mm  PUMPS={dips}  terminated(press-once)={terminated}")
 print(f"pelvis z: min={z.min():.3f}  |roll|max={np.degrees(np.max(np.abs(roll))):.1f}deg "
       f"|pitch|max={np.degrees(np.max(np.abs(pitch))):.1f}deg")
-print(f"PASS box HELD throughout : {held_all}")
+print(f"PASS box HELD thru carry : {held_carry}")
+print(f"PASS box PLACED (resting z<0.15, >25cm from button): {placed_ok}")
 print(f"PASS press>=20mm PUMPS=0 : {press_ok}")
 print(f"PASS upright (z>0.6)     : {upright}")
 print(f"frames: {len(frames)}")
 
 imageio.mimsave("_g6_onetake.mp4", frames, fps=30, quality=8)
 print(f"saved _g6_onetake.mp4 ({len(frames)} frames)")
-for name, key in (("_g6_f0.png", "pick"), ("_g6_f1.png", "carry"), ("_g6_f2.png", "press"), ("_g6_f3.png", "rest")):
+for name, key in (("_g6_f0.png", "pick"), ("_g6_f1.png", "carry"), ("_g6_f2.png", "place"), ("_g6_f3.png", "press")):
     if key in snap:
         imageio.imwrite(name, frames[snap[key]])
         print(f"saved {name} (frame {snap[key]})")
