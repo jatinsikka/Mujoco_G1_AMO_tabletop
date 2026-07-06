@@ -31,6 +31,10 @@ A note on epistemics, which doubles as our methodology: every number in this pap
 
 ## 2. System Overview
 
+![The Sequent pipeline: ticket → bi-encoder retrieval over 1,012 SOPs → top-5 → faithful planner → verifier/executor → body skills (walk AMO, pick IK+latch, press RL, lever RL)](figures/fig_pipeline.png)
+
+*Figure 1 — The Sequent pipeline. A plain-language ticket is embedded by the fine-tuned bi-encoder and matched against the 1,012-SOP index; the top-5 candidates feed the deterministic faithful planner (one skill per written SOP step). The executor runs every skill inside a pre/postcondition contract measured from `mjData`, and the body executes with controllers for kinematics and RL for contact.*
+
 Sequent spans two repositories: the *brain* (`sop_planner_baseline`) — corpus generation, retriever training and evaluation, and the planner — and the *robot* (`sequent-g1`) — the MuJoCo G1 model, skill controllers and RL environments, the verifier, and the demo harnesses. At runtime the brain is bridged into the robot process (`brain_bridge.py`), so a single script takes a ticket string and drives the simulated robot.
 
 **Execution model.** The plan is a typed list of skills with arguments. An executor runs each skill inside a contract: a *precondition* check (measured from `mjData` — e.g., robot upright, base within tolerance of the workstation), the skill itself, and a *postcondition* check (e.g., button displaced past threshold and held; box held above the table for a sustained window; base still upright). A step that fails its postcondition is reported as failed — it does not silently pass — and the final verdict aggregates step results.
@@ -59,6 +63,10 @@ We fine-tuned `sentence-transformers/all-MiniLM-L6-v2` — a 22.7M-parameter, 6-
 | **Fine-tuned bi-encoder (ours)** | **0.584** | **0.851** | **0.697** |
 
 (The original training-repo evaluation measured 0.572 / 0.866 / 0.692 on the same split; the small differences reflect environment/version drift, and both were measured live, not quoted.)
+
+![Grouped bar chart of R@1/R@5/MRR for TF-IDF, the fine-tuned bi-encoder, and the bi-encoder plus reranker](figures/fig_retrieval.png)
+
+*Figure 2 — Held-out retrieval over the full 1,012-SOP index (269 test incidents). The fine-tuned bi-encoder roughly doubles TF-IDF at R@1; adding an off-the-shelf cross-encoder reranker **hurts** (R@1 0.584 → 0.442), so it is excluded from the system. All bars are our own measurements (TF-IDF and bi-encoder reproduced locally; reranker columns from the original training-repo evaluation).*
 
 Two negative results shaped the design more than the headline number:
 
@@ -139,6 +147,10 @@ After both fixes the deterministic policy reaches from the true rest pose and pr
 **Failure.** A full day of far-start training failures — across reward variants, entropy schedules, and curriculum settings — traced to one number. The policy's action scale was **0.5 rad** per joint around the neutral pose, but the rest→contact joint-space offsets are **0.511 rad (shoulder yaw)** and **0.672 rad (elbow)** for the press, and up to **1.1 rad** for the lever. From a true rest start the policy *physically could not command the contact pose*; every attempt saturated silently at the actuator clamp, and no amount of learning could fix it.
 
 **Fix.** Widen the envelope: 0.8 rad for the press, 1.2 rad for the lever. Far-start learning unblocked immediately.
+
+![Horizontal bars of required rest-to-contact joint offsets versus the old ±0.5 rad envelope and the new 0.8/1.2 envelopes](figures/fig_envelope.png)
+
+*Figure 3 — The action-envelope wall. Required rest→contact joint-space offsets (bars) versus the original ±0.5 rad action envelope (dashed red) and the widened envelopes (dotted green: 0.8 press, 1.2 lever). Every offset the tasks actually require exceeds the old envelope, so a far-start policy saturated silently at the actuator clamp — no reward change could have fixed it.*
 
 **Lesson.** Before debugging rewards, verify that the action space can *express* the optimal policy. Saturation is silent; a clamped action looks identical to a timid one in every training curve.
 
@@ -233,9 +245,17 @@ All RL skills use Stable-Baselines3 PPO, MlpPolicy [128, 128], `n_steps` 1024, b
 
 ### 6.1 G6: the one-take loco-manipulation chain
 
+![Film strip of six frames from the G6 one-take video: walk, pick, carry, place, press, rest](figures/fig_onetake_strip.png)
+
+*Figure 4 — Six frames from the G6 one-take video (a single unbroken simulation, not compiled from clips): walk, pick (IK + force-gated latch), carry with the box held, place at the panel station, RL press, return to rest.*
+
 The G6 gate is a single continuous simulation: walk to the table → pick the box → carry 2.8 m including a 180° turn → place at the panel station → RL press (34.5 mm, PUMPS=0) → return to rest. All verification criteria pass; the box is never dropped; the robot never falls. This run also surfaced and fixed a real bug (a stale external-force flag from the carry corrupting the place), which is why gates are run as *takes*, not compiled from clips.
 
 ### 6.2 The finale: ticket → brain → robot
+
+![Film strip of six frames from the Gate-7 ticket video: ticket card, retrieval card, walk, press, notify caption, resolved card](figures/fig_ticket_strip.png)
+
+*Figure 5 — Six frames from the Gate-7 ticket-to-robot video: the incident ticket card, the retrieval card (trained bi-encoder top-5 over the full index), the walk, the RL press, a captioned non-embodied step (`notify` — captioned on screen rather than mimed), and the final resolved-verdict card.*
 
 For the final demonstration we authored a new SOP (SOP-1013, disclosed as authored for the demo) describing the full workstation procedure, added it to the 1,012-SOP index, and issued a natural-language ticket. The trained retriever returned SOP-1013 at **rank 1 (score 0.897)** over the full corpus; the faithful planner emitted a five-action plan; the robot executed it in one take:
 
@@ -246,6 +266,10 @@ For the final demonstration we authored a new SOP (SOP-1013, disclosed as author
 | 3 | press_button | 33.8 mm press, held, PUMPS=0 | **PASS** |
 | 4 | lever | 0.883 → 0.443 rad (best of 4 stance variants); success requires < 0.25 rad | **FAIL** |
 | 5 | notify | operator notified with per-step verdict card | **PASS** |
+
+![Lever angle versus control step for the three finale takes, with the success band below 0.25 rad shaded and the 1.05 rad latched rest marked](figures/fig_lever_trace.png)
+
+*Figure 6 — Lever angle vs. control step for the three end-to-end finale takes, digitized from the run logs (sampled every 40 control steps; per-run minima from the logs' summary lines). The lever rests latched at 1.05 rad; success requires < 0.25 rad. Run 1 (the headline take) reaches 0.443 rad and stalls; run 2 stalls higher; run 3 (the take recorded in the finale video) loses the arc and springs back toward rest. No take reaches the success band — this is the lever failure the system reports on camera. Legends give each take's measured arrival-stance error (the sensitivity of §5.7).*
 
 The system's own verdict card reads **"PARTIALLY RESOLVED"** — the lever step failed, the system said so, and that honesty is the point of the architecture. A demo that cannot fail on camera is not verifying anything.
 
