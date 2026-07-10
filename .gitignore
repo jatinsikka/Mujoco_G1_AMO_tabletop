@@ -49,3 +49,7 @@ _demo_plan.json
 *.zip
 *.pt
 brain/artifacts/
+
+# published README/paper media (exceptions to the *.gif/*.png blanket)
+!docs/figures/*.png
+!docs/media/*.gif
